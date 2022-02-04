@@ -1,0 +1,56 @@
+#models/post.graphql
+
+extend type Query {
+    #全ての投稿を取得(ページングなし)
+    getAllPosts: [Post!]! @all
+
+    #投稿一覧をページング（@paginate）
+    #posts(first: Int!, page: Int): PostPaginator <---自動でPostPaginator型が定義されている？
+    posts: [Post!]! @paginate
+
+    #指定した投稿を取得
+    post(id: Int! @eq): Post @find
+
+    #Userのidから投稿数のみを取得
+    getPostCountByUserId(authorId: Int!): Int!
+        @field(resolver: "App\\GraphQL\\Queries\\Post@getPostCountByUserId")
+}
+
+extend type Mutation {
+    #新規投稿
+    createPost(
+        title: String!
+            @rules(
+                apply: ["required", "max:20"]
+                messages: [
+                    { rule: "required", message: "titleを入力してください。" }
+                    {
+                        rule: "max"
+                        message: "タイトルは20文字以内で入力してください。"
+                    }
+                ]
+            )
+        content: String!
+            @rules(
+                apply: ["required", "max:50"]
+                messages: [
+                    { rule: "required", message: "本文を入力してください。" }
+                    {
+                        rule: "max"
+                        message: "本文は50文字以内で入力してください。"
+                    }
+                ]
+            )
+        author_id: Int!
+    ): Post @create
+}
+
+#id, author_id, title, content, created_at, update_at
+type Post {
+    id: ID!
+    title: String!
+    content: String!
+    commentCnt(postId: Int!): Int! @method #コメントされた数を定義
+    author: User! @belongsTo
+    comments: [Comment!]! @hasMany
+}

@@ -1,0 +1,39 @@
+#models/comment.graphql
+
+extend type Query {
+    #トータルコメント数を取得
+    getTotalCount: Int!
+        @field(resolver: "App\\GraphQL\\Queries\\Comment@getTotalCount")
+
+    #コメントの本文をlike検索
+    getLikeComments(reply: String!): [Comment!]!
+        @field(resolver: "App\\GraphQL\\Queries\\Comment@getLikeComments")
+}
+
+extend type Mutation {
+    #新規コメント
+    createComment(
+        reply: String!
+            @rules(
+                apply: ["required", "max:50"]
+                messages: [
+                    {
+                        rule: "required"
+                        message: "コメントを入力してください。"
+                    }
+                    {
+                        rule: "max"
+                        message: "コメントは50文字以内で入力してください。"
+                    }
+                ]
+            )
+        post_id: Int!
+    ): Comment @create
+}
+
+#id, post_id, reply, created_at, update_at
+type Comment {
+    id: ID!
+    reply: String!
+    post: Post! @belongsTo
+}

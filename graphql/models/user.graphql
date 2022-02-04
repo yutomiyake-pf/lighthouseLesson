@@ -1,0 +1,90 @@
+#models/user.graphql
+
+extend type Query {
+    #----------ディレクティブ----------#
+    #email, passwordでのログイン用のQuery
+    #実際には@authディレクティブを使う
+    #複数バリデーションあり。エラーメッセージをカスタム。
+    #@eqディレクティブは一致するものを検索するもの
+    auth(
+        email: String!
+            @eq
+            @rules(
+                apply: ["email", "required"]
+                messages: [
+                    {
+                        rule: "email"
+                        message: "正しいメールアドレスを入力してください。"
+                    }
+                    #空のリクエストに対してのバリデーション
+                    {
+                        rule: "required"
+                        message: "メールアドレスを入力してください。"
+                    }
+                ]
+            )
+        password: String!
+            @eq
+            @rules(
+                apply: ["required"]
+                messages: [
+                    {
+                        rule: "required"
+                        message: "パスワードを入力してください。"
+                    }
+                ]
+            )
+    ): User @find
+
+    #ユーザー一覧をページングして取得
+    #@paginateディレクティブを使うと
+    #getAllUsers(first: Int!, page: Int): UserPaginator <---自動でUserPaginator型が定義されている？
+    #のように変換される
+
+    #５件ずつページングしたい場合は以下のリクエスト
+    #{
+    #getAllUsers(first: 5) {
+    #data{
+    #id
+    #name
+    #}
+    #paginatorInfo {　<---ページングの情報を取得できる
+    #currentPage
+    #lastPage
+    #}
+    #}
+    #}
+    getAllUsers: [User!]! @paginate
+
+    #idからUserを取得するresolver
+    getUser(id: Int!): User!
+        @field(resolver: "App\\GraphQL\\Queries\\User@getUserById") #@fieldでresolverメソッドを指定できる
+    #--------------------resolver--------------------------------#
+    hello: String! #Hello GraphQLの文字列を返却するresolver
+    greet(name: String!): String! #Hello name!!の文字列を返すresolver
+}
+
+extend type Mutation {
+    #新しいユーザーを作る(バリデーションあり)
+    #バリデーションするときは@rulesディレクティブを使う。返却型(User)の後に@create, @update, @findをつけないとエラーになる
+    createUser(
+        name: String!
+        email: String! @rules(apply: ["email"])
+        password: String!
+    ): User @create
+
+    #ユーザー更新用
+    updateUser(id: ID!, name: String!): User @update
+}
+
+#id, name, email, email_verified_at, password, remember_token, created_at, update_at
+type User {
+    id: ID!
+    name: String!
+    email: String!
+    password: String!
+    created_at: DateTime!
+    updated_at: DateTime!
+    postCount(authorId: Int!): Int! @method #投稿数をカスタム定義
+    posts: [Post!]! @hasMany
+}

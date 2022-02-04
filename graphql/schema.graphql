@@ -1,0 +1,15 @@
+#カスタムスカラーを定義
+scalar DateTime
+    @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\DateTime")
+
+#必ずQueryとMutationは定義しておく
+type Query
+
+type Mutation
+
+#リレーション関係
+#users(id)<<--->>posts(author_id)
+#posts(id)<<--->>comments(post_id)
+
+#-----models配下をインポート-----#
+#import models/*.graphql
